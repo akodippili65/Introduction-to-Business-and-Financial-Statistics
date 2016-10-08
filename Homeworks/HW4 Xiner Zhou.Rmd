@@ -1,0 +1,237 @@
+---
+title: "Stat 107: Introduction to Business and Financial Statistics
+            Homework 4: Due Monday, October 3"
+author: "Xiner Zhou"
+date: "September 28, 2016"
+output: word_document
+---
+ 
+# (1) 
+![Teall book, page 113, problem 6.1 ](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\Teall6_1.png). 
+
+##### (a)
+$$E\left( R_p \right)= w_H \times E \left( R_H \right)+w_M \times E\left( R_M \right)$$
+$$=0.75 \times 6\% + 0.25 \times 20\%$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=',0.75*0.06+0.25*0.2)
+```
+
+##### (b)
+$$Var\left( R_p \right) = w_H^2 \times Var(R_H) + w_M^2 \times Var(R_M) + 2w_{H}w_{M}Cov_{H,M}$$
+$$= w_H^2 \times (\sigma_H)^2 + w_M^2 \times (\sigma_M)^2 + 2w_{H}w_{M}\sigma_H\sigma_M\rho_{H,M}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=',0.75^2*0.09^2+0.25^2*0.3^2+2*0.75*0.09*0.25*0.3*0.4)
+```
+
+##### (c)
+$$\sigma\left( R_p \right) = \sqrt{Var\left( R_p \right)}$$
+$$=\sqrt{w_H^2 \times (\sigma_H)^2 + w_M^2 \times (\sigma_M)^2 + 2w_{H}w_{M}\sigma_H\sigma_M\rho_{H,M}}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=',sqrt(0.75^2*0.09^2+0.25^2*0.3^2+2*0.75*0.09*0.25*0.3*0.4))
+```
+
+-----
+
+
+
+# (2) 
+![Teall book, page 113, problem 6.4 ](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\Teall6_4.png).
+
+The expected returns will be the same regardless of correlation:
+$$E\left( R_p \right)= w_{AAB} \times E \left( R_{AAB} \right)+w_{ZZY} \times E\left( R_{ZZY} \right)$$
+$$=0.5 \times 5\% + 0.5 \times 10\%$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=',0.5*0.05+0.5*0.1)
+```
+
+The standard deviation is related to the correlation:
+$$\sigma\left( R_p \right) = \sqrt{Var\left( R_p \right)}$$
+$$=\sqrt{w_{AAB}^2 \times (\sigma_{AAB})^2 + w_{ZZY}^2 \times (\sigma_{ZZY})^2 + 2w_{AAB}w_{ZZY}\sigma_{AAB}\sigma_{ZZY}\rho_{AAB,ZZY}}$$
+ 
+##### (a)
+If perfectly correlated, then $$\rho_{AAB, ZZY}=1$$
+```{r,warning=FALSE, message=FALSE}
+cat('=',sqrt(0.5^2*0.12^2+0.5^2*0.2^2+2*0.5*0.12*0.5*0.2*1))
+```
+
+
+##### (b)
+If independent, then $$\rho_{AAB, ZZY}=0$$
+```{r,warning=FALSE, message=FALSE}
+cat('=',sqrt(0.5^2*0.12^2+0.5^2*0.2^2+2*0.5*0.12*0.5*0.2*0))
+```
+
+##### (c)
+If perfectly inversely correlated, then $$\rho_{AAB, ZZY}=-1$$
+```{r,warning=FALSE, message=FALSE}
+cat('=',sqrt(0.5^2*0.12^2+0.5^2*0.2^2+2*0.5*0.12*0.5*0.2*(-1)))
+```
+
+-----
+
+
+
+# (3) 
+![Teall book, page 114, problem 6.6 ](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\Teall6_6_1.png).
+![](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\Teall6_6_2.png).
+
+The expected return:
+$$E\left( R_p \right)= w_{1} \times E \left( R_{1} \right)+w_{2} \times E\left( R_{2} \right)+w_{3} \times E\left( R_{3} \right)$$
+$$=(1/3) \times 0.25 + (1/6) \times 0.15 + (1/2) \times 0.05$$
+```{r,warning=FALSE, message=FALSE}
+cat('=',(1/3)*0.25 + (1/6)*0.15 + (1/2)*0.05 )
+```
+
+The Variance:
+$$Var\left( R_p \right) = w_1^2 \times (\sigma_1)^2 + w_2^2 \times (\sigma_2)^2 + w_3^2 \times (\sigma_3)^2$$
+$$+ 2w_{1}w_{2}Cov_{1,2}+ 2w_{1}w_{3}Cov_{1,3}+ 2w_{2}w_{3}Cov_{2,3}$$
+```{r,warning=FALSE, message=FALSE}
+cat('=',(1/3)^2*0.4^2 + (1/6)^2*0.2^2 + (1/2)*0^2 + 2*(1/3)*(1/6)*0.05+2*(1/3)*(1/2)*0+2*(1/6)*(1/2)*0 )
+```
+
+-----
+
+
+
+# (4) 
+![Teall book, page 114, problem 6.8 ](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\Teall6_8.png).
+
+$$\rho_{i,j}=0 \forall i \neq j$$
+$$\sigma_{i}=0.8  \forall i$$
+
+Assume equal weights for all securities, then the standard deviation of portfolio returns is:
+$$\sigma\left(R_{n-security}\right)=\sqrt{\sum_i^n{w_i^2\sigma_i^2}}$$
+$$=\sqrt{\sigma^2\sum_i^n{\frac{1}{n}^2}}$$
+$$=\sigma\sqrt{\frac{1}{n}}$$
+$$=\frac{\sigma}{\sqrt{n}}$$
+ 
+##### (a)
+$$\sigma\left(R_{2-security}\right)=\frac{\sigma}{\sqrt{2}}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=', 0.8/sqrt(2))
+```
+
+##### (b)
+$$\sigma\left(R_{4-security}\right)=\frac{\sigma}{\sqrt{4}}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=', 0.8/sqrt(4))
+```
+
+##### (c)
+$$\sigma\left(R_{8-security}\right)=\frac{\sigma}{\sqrt{8}}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=', 0.8/sqrt(8))
+```
+
+##### (d)
+$$\sigma\left(R_{16-security}\right)=\frac{\sigma}{\sqrt{16}}$$
+
+```{r,warning=FALSE, message=FALSE}
+cat('=', 0.8/sqrt(16))
+```
+
+##### (e)
+If $E\left(R_i\right)=0.10  \forall i$, then the expected returns of portfolio from a) to d) are all the same regardless how many securities and what the portfolio weights are:
+
+$$E\left(R_p\right)=\sum_i^{n} w_i E\left(R_i\right)$$
+$$=0.10 \times \left(\sum_i^{n} w_i\right)$$
+$$=0.1 \times 1$$
+$$=0.1$$
+
+-----
+
+
+
+# (5)
+![](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\HW4Q5.png).
+
+##### (a)
+```{r,warning=FALSE, message=FALSE}
+library(quantmod)
+QLD=getSymbols("QLD",from="2015-01-01",to="2016-01-01",auto.assign=FALSE)
+QLD.ret=dailyReturn(Ad(QLD))
+QID=getSymbols("QID",from="2015-01-01",to="2016-01-01",auto.assign=FALSE)
+QID.ret=dailyReturn(Ad(QID))
+
+cor(QLD.ret,QID.ret)
+```
+
+##### (b)
+```{r,warning=FALSE, message=FALSE}
+s.QLD<-sd(QLD.ret)
+s.QID<-sd(QID.ret)
+
+w.QLD<-s.QID/(s.QLD+s.QID)
+w.QID<-1-w.QLD 
+cat("To have a 0 risk portfolio, the weight for QLD=",w.QLD,'\n',
+    "To have a 0 risk portfolio, the weight for QID=",w.QID,'\n')
+```
+
+##### (c)
+```{r,warning=FALSE, message=FALSE}
+cat('The mean of the 0 risk portfolio=',mean(w.QLD*QLD.ret+w.QID*QID.ret),'\n',
+    'The standard deviation of the 0 risk portfolio=',sd(w.QLD*QLD.ret+w.QID*QID.ret),'\n')
+```
+
+The expected return of the 0 risk portfolio is negative, so the investors, if using this strategy, are guaranteed to lose money, although the magnitude is small in this case; the standard deviation is very close to 0, which validate the formula about how to achieve a risk-free portfolio, when two assets are perfectly inversely correlated.
+
+-----
+
+
+
+# (6)
+![](E:\Course Work at Harvard\Introduction to Financial Statisitcs\pic\HW4Q6.png).
+
+##### (a)
+```{r,warning=FALSE, message=FALSE}
+MRK=getSymbols("MRK",from="2013-01-01",to="2016-08-01",auto.assign=FALSE)
+MRK.ret=monthlyReturn(Ad(MRK))
+KORS=getSymbols("KORS",from="2013-01-01",to="2016-08-01",auto.assign=FALSE)
+KORS.ret=monthlyReturn(Ad(KORS))
+LULU=getSymbols("LULU",from="2013-01-01",to="2016-08-01",auto.assign=FALSE)
+LULU.ret=monthlyReturn(Ad(LULU))
+SPY=getSymbols("SPY",from="2013-01-01",to="2016-08-01",auto.assign=FALSE)
+SPY.ret=monthlyReturn(Ad(SPY))
+```
+
+MRK is Merck & Co., Inc. KORS is Michael Kors Holdings Limited. LULU is Lululemon Athletica Inc. SPY is SPDR S&P 500 ETF. MRK, KORS, and LULU are individual stocks, while SPY is not.
+
+##### (b)
+```{r,warning=FALSE, message=FALSE}
+cat("The average monthly return for MRK =", mean(MRK.ret),'\n', 
+    "The standard deviation of monthly return for MRK =", sd(MRK.ret),'\n\n',
+    "The average monthly return for KORS =", mean(KORS.ret),'\n',
+    "The standard deviation of monthly return for KORS =", sd(KORS.ret),'\n\n',
+    "The average monthly return for LULU =", mean(LULU.ret),'\n',
+    "The standard deviation of monthly return for LULU =", sd(LULU.ret),'\n\n',
+    "The average monthly return for SPY =", mean(SPY.ret),'\n',
+    "The standard deviation of monthly return for SPY =", sd(SPY.ret),'\n\n')
+
+cat("Correlation between MRK and KORS=", cor(MRK.ret, KORS.ret), '\n',
+    "Correlation between MRK and LULU=", cor(MRK.ret, LULU.ret), '\n',
+    "Correlation between KORS and LULU=", cor(KORS.ret, LULU.ret), '\n')
+```
+
+
+##### (C)
+```{r,warning=FALSE, message=FALSE}
+cat("The expected return of portfolio (MRK,KORS)=", 0.5*mean(MRK.ret)+0.5*mean(KORS.ret), '\n',
+    "The standard deviation of portfolio (MRK,KORS)=", sqrt(0.5^2*sd(MRK.ret)^2+0.5^2*sd(KORS.ret)^2+2*0.5*0.5*sd(MRK.ret)*sd(KORS.ret)*cor(MRK.ret,KORS.ret)), '\n\n',
+    "The expected return of portfolio (MRK,LULU)=", 0.5*mean(MRK.ret)+0.5*mean(LULU.ret), '\n',
+    "The standard deviation of portfolio (MRK,LULU)=", sqrt(0.5^2*sd(MRK.ret)^2+0.5^2*sd(LULU.ret)^2+2*0.5*0.5*sd(MRK.ret)*sd(LULU.ret)*cor(MRK.ret,LULU.ret)), '\n\n',
+    "The expected return of portfolio (KORS,LULU)=", 0.5*mean(KORS.ret)+0.5*mean(LULU.ret), '\n',
+    "The standard deviation of portfolio (KORS,LULU)=", sqrt(0.5^2*sd(KORS.ret)^2+0.5^2*sd(LULU.ret)^2+2*0.5*0.5*sd(KORS.ret)*sd(LULU.ret)*cor(KORS.ret,LULU.ret)), '\n\n')
+```
+
+##### (d)
+
+The best to worst portfolio in terms of risk/standard deviation is: (MRK,LULU), (MRK,KORS), (KORS,LULU). The same rank applies even if we compare based on expected returns. So (MRK,LULU) has the highest expected return with least risk, while (KORS,LULU) has the lowest expected return with highest risk.
+
+All the three portfolios have standard deviation somewhere between individual stocks, but not less than. For (MRK,LULU) and (KORS,LULU), because of their pair-wise correlation are positive, it's not possible to find weights that make the portfolio risk less than the least risky individual stock's. For (MRK, KORS), the correlation is slightly nagative, we could find some weights that make the portfolio less risker than the least risky individual stock, but the designated weights 0.5/0.5 is not one of those weights.

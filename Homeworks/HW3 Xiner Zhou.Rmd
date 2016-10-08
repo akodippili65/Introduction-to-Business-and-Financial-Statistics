@@ -1,0 +1,587 @@
+---
+title: 'Stat 107: Introduction to Business and Financial Statistics 
+       Homework 3: Due Monday, Sept 26'
+author: "Xiner Zhou"
+date: "September 20, 2016"
+output: word_document
+---
+
+# (1) 
+
+Develop a simulation for the following problem. The management of Madeira Manufacturing Company is considering the introduction of a new product. The fixed cost to begin the production of the product is $30,000. The variable cost for the product is uniformly distributed between $16 and $24 per unit. The product will sell for $50 per unit. Demand for the product is best described by a normal probability distribution with a mean of 1200 units and a standard deviation of 300 units. Use 500 simulation trials to answer the following questions:
+
+##### (a) 
+
+What is the mean profit for the simulation?
+
+```{r,warning=F,message=F}
+set.seed(02138)
+profit<-numeric(500) # initialize place-holder 
+price<-50
+fixed.cost<-30000
+
+for(i in 1:500){
+
+  var.cost<-runif(n=1,min=16,max=24)
+  quantity<-rnorm(n=1, mean=1200, sd=300) # Assume production quantity=quantity demanded
+  profit[i]<-(price-var.cost)*quantity-fixed.cost 
+  
+  #cat(i,"th simulation: \n","variable cost=",var.cost, "quantity=", quantity, "profit=", profit[i],'\n')
+}
+
+cat("The mean profit for the 500 simulation trials = $", mean(profit), '\n')
+ 
+```
+
+
+##### (b) 
+
+What is the probability that the project will result in a loss?
+
+```{r,warning=F,message=F}
+cat("The probability that the project will result in a loss =", mean(profit<0), '\n')
+```
+
+
+##### (c) 
+
+What is your recommendation concerning the introduction of the product? 
+
+```{r,warning=F,message=F}
+# summary stats
+summary(profit)
+sd(profit)
+quantile(profit,c(0.05, 0.1, 0.25, 0.5, 0.75, 0.90, 0.95))
+
+
+# Empirical CDF
+plot(ecdf(profit))
+abline(v=quantile(profit,0.05), col='orange')
+text(x=quantile(profit,0.05), y=0, labels =paste("$",round(quantile(profit,0.05),0)) )
+abline(v=quantile(profit,0.95), col='orange')
+text(x=quantile(profit,0.95), y=0, labels =paste("$",round(quantile(profit,0.95),0)) )
+abline(v=quantile(profit,0.5), col='orange')
+text(x=quantile(profit,0.5), y=0, labels =paste("$",round(quantile(profit,0.5),0)) )
+```
+
+> My recommendation: Assume that the company produce as much products as the market demanded, the introduction of the product would likely to have an average profit $5,324, with a relative large standard deviation $9,685. The probability that the project will result in a loss is 28.6% (or, the probability of making any profit is 71.4%). There is indeed high risk can be seen from both the standard deviation and probability of loss. If the company is somewhat or high risk adverse, this product may not produce best utility, especially there are other investment opportunities available, with higher mean profit to standard deviation ratio. 
+
+> But in order to tell the whole story, we can look at the empirical CDF which reveals all possible scenarios. For example, 5% VaR is $10,935, but it also has 5% chance of earning more than $21,900; there is a 28.6% chance of loss money, but it also has a 25% chance of earning more than $11,428; and there is a 50% chance of making profits more than $5,241.  
+
+-----
+
+ 
+
+# (2)
+
+Read about the Volume Weighted Moving Average [here](http://www.financialwisdomforum.org/gummy-stuff/VMA.htm). Modify the 200day moving average code from class to instead use VMA [the R code is for example VWMA(n=200,Ad(AAPL),Vo(AAPL))] For AAPL, ANF, GE, C and LCI compare the returns from a 200 day moving average to a 200 day volume weighted moving average. Use data staring from 2010-01-01. 
+
+
+[Note on my 200 day moving average code](file:///C:/Users/xiz933/Downloads/I%20have%20written%20absolutely%20horrid%20R%20code%20(2).pdf)
+
+
+**200 day moving average code**
+
+```{r,warning=F,message=F}
+#One common strategy is to chart two moving averages of different lengths. When the shorter average crosses above the longer average, it's a golden cross, and describes a buy signal. When the shorter moving average crosses below the longer one, it's a sell signal known as the death cross.
+
+library(quantmod)
+library(TTR)
+
+MA200<-function(ticker) {
+  
+startdate="2010-01-01"
+malength=200
+#ticker="AAPL"
+
+stockdata=getSymbols(ticker,from=startdate,auto.assign=FALSE)
+ndays=nrow(stockdata)
+
+# 200day MA need 200 days of data to compute, so we go back and get more (200-1) trading days' data
+# But the problem is we don't know how many days need to go back
+thetimes=time(stockdata)
+firstdate=thetimes[1]
+goback=thetimes[1]-300
+
+morestockdata=getSymbols(ticker,from=goback, auto.assign=FALSE)
+
+# Let 200th entry be our startdate
+stockdata<-morestockdata[(which(time(morestockdata)==firstdate)-malength-1):nrow(morestockdata),]
+sp=as.numeric(Ad(stockdata))
+ma=SMA(sp,malength)
+ 
+signal="inStock"
+buyprice=sp[malength]
+sellprice=0
+mawealth=1
+#cat("Buy Price = ",buyprice )
+
+for(d in (malength+1):ndays) {
+  if((sp[d]>ma[d]) && (signal=="inCash")) {
+  buyprice=sp[d]
+  signal = "inStock"
+  #cat("Buy Price = ",buyprice, '\n' )
+}
+
+if(((sp[d]<ma[d]) || (d==ndays)) && (signal=="inStock")) {
+   sellprice=sp[d]
+   signal = "inCash"
+   mawealth=mawealth*(sellprice/buyprice)
+   #cat("Sell Price = ",sellprice, '\n'  )
+}
+}
+
+
+bhwealth=sp[ndays]/sp[malength]
+
+# Need to determine number of years and calculate CAGR from total return
+nyear<-ndays/252
+print(paste("MA CAGR = ",mawealth^(1/nyear)-1))
+print(paste("BH CAGR = ",bhwealth^(1/nyear)-1))
+}
+ 
+```
+
+
+**Volume Weighted Moving Average code**
+
+```{r,warning=F,message=F}
+VWMA200<-function(ticker) {
+  
+startdate="2010-01-01"
+malength=200
+#ticker="LCI"
+
+stockdata=getSymbols(ticker,from=startdate,auto.assign=FALSE)
+ndays=nrow(stockdata)
+
+# 200day MA need 200 days of data to compute, so we go back and get more (200-1) trading days' data
+# But the problem is we don't know how many days need to go back
+thetimes=time(stockdata)
+firstdate=thetimes[1]
+goback=thetimes[1]-300
+
+morestockdata=getSymbols(ticker,from=goback, auto.assign=FALSE)
+
+# Let 200th entry be our startdate
+stockdata<-morestockdata[(which(time(morestockdata)==firstdate)-malength-1):nrow(morestockdata),]
+sp=as.numeric(Ad(stockdata))
+ma=VWMA(price=Ad(stockdata), volume=Vo(stockdata), n=malength)
+ 
+signal="inStock"
+buyprice=sp[malength]
+sellprice=0
+mawealth=1
+#cat("Buy Price = ",buyprice )
+
+for(d in (malength+1):ndays) {
+  if((sp[d]>ma[d]) && (signal=="inCash")) {
+  buyprice=sp[d]
+  signal = "inStock"
+  #cat("Buy Price = ",buyprice, '\n' )
+}
+
+if(((sp[d]<ma[d]) || (d==ndays)) && (signal=="inStock")) {
+   sellprice=sp[d]
+   signal = "inCash"
+   mawealth=mawealth*(sellprice/buyprice)
+   #cat("Sell Price = ",sellprice, '\n'  )
+}
+}
+
+
+bhwealth=sp[ndays]/sp[malength]
+
+# Need to determine number of years and calculate CAGR from total return
+nyear<-ndays/252
+print(paste("VWMA CAGR = ",mawealth^(1/nyear)-1))
+print(paste("BH CAGR = ",bhwealth^(1/nyear)-1))
+}
+
+```
+
+ 
+```{r,warning=FALSE, message=FALSE}
+MA200("AAPL")
+VWMA200("AAPL")
+
+MA200("ANF")
+VWMA200("ANF")
+
+MA200("GE")
+VWMA200("GE")
+
+MA200("C")
+VWMA200("C")
+
+MA200("LCI")
+VWMA200("LCI")
+```
+
+> Compare the returns from a 200 day moving average to a 200 day volume weighted moving average: Except GE, 200 day moving average out-performs 200 day volume weighted moving average on all other stocks in terms of CAGR.
+
+-----
+
+
+
+
+# (3)
+
+A student of mine was asked this question in an interview. "Consider the following game: A cup is filled with 100 pennies. The cup is shaken, and the pennies are poured onto a table. If at least 60 of the pennies are Heads, you win $20. Otherwise, you lose $1. Is this a good game to play?" (that is does it have a positive expected value?). Answer this using simulation in R. That is, simulate playing this game many times and determine how much you would win or lose. Does it appear to be a fair game?
+
+```{r,warning=F,message=F}
+set.seed(02138)
+money<-numeric(100000) # initialize place-holder
+for(i in 1:100000){
+  num.head<-rbinom(n=1,size=100,prob = 0.5)
+  money[i]<-ifelse(num.head>=60, 20, -1)
+}
+
+cat("how much you would win or lose=",mean(money),'\n')
+cat("the probability of lose=",mean(money<0),'\n')
+ 
+```
+
+> You would expected to lose $0.4183, and the likelihood of lose is 97.23%, i.e., you are almost surely to lose this game, therefore, it's not a fair game.
+
+-----
+
+
+
+# (4)
+
+For this problem we are going to build our own normality test using the bootstrap. To do so, we first need to know how to extract the bootstrap confidence interval from the boot function.
+
+The following example code extracts the bootstrap confidence interval:
+
+```{r,eval=FALSE}
+mymean = function(x,i) return(mean(x[i])
+myboots = boot(mydata,mymean,R=1000)
+mybootsci=boot.ci(myboots)$normal
+lowerci=mybootsci[2]
+upperci=mybootsci[3]
+```
+
+If data is truly normal, it should have a skewness value of 0 and a kurtosis value of 3. Write an R function that conducts a normality test as follows: it takes as input a data set, calculates a bootstrap confidence interval for the skewness, calculates a bootstrap confidence interval for the kurtosis, then sees if 0 is in the skewness interval and 3 is in the kurtosis interval. If so, your routine prints that the data is normally distributed, otherwise your routine should print that the data is not normally distributed. Test your routine on normal (rnorm), uniform (runif), exponential (rexp) , AAPL daily and AAPL monthly returns. 
+
+```{r,warning=F,message=F}
+library(moments)
+library(boot)
+
+mynorm.test<-function(mydata, n.boot){
+  my.skewness<-function(d,i){
+  return(skewness(d[i]))
+  }
+  my.kurtosis<-function(d,i){
+  return(kurtosis(d[i]))
+  }
+  
+  bfit.skewness<-boot(mydata, my.skewness, R=n.boot)
+  mybootci.skewness<-boot.ci(bfit.skewness)$normal
+  lowerci.skewness<-mybootci.skewness[2]
+  upperci.skewness<-mybootci.skewness[3]
+  cat("95% Bootstrap Confidence Interval for Skewness:\n","(",lowerci.skewness,",",upperci.skewness,")","\n")
+  
+  bfit.kurtosis<-boot(mydata, my.kurtosis, R=n.boot)
+  mybootci.kurtosis<-boot.ci(bfit.kurtosis)$normal
+  lowerci.kurtosis<-mybootci.kurtosis[2]
+  upperci.kurtosis<-mybootci.kurtosis[3]
+  cat("95% Bootstrap Confidence Interval for Kurtosis:\n","(",lowerci.kurtosis,",",upperci.kurtosis,")","\n")
+  
+  if(0>lowerci.skewness & 0<upperci.skewness & 3>lowerci.kurtosis & 3<upperci.kurtosis){
+    cat("the data is normally distributed!","\n")
+  }
+  else {cat("the data is not normally distributed!","\n")}
+
+}
+# get stock data
+stockdata=getSymbols("AAPL",from="2010-01-01",auto.assign=FALSE)
+daily.rets=dailyReturn(Ad(stockdata))
+monthly.rets=monthlyReturn(Ad(stockdata))
+
+mynorm.test(rnorm(1000), 10000)
+mynorm.test(runif(1000), 10000)
+mynorm.test(runif(1000), 10000)
+mynorm.test(daily.rets, 10000)
+mynorm.test(monthly.rets, 10000)
+```
+
+-----
+
+
+# (5)
+
+In the game of Chuck-A-Luck a player tosses three dice and earns a dollar for each 6 that appears. It costs one dollar for each roll of the three dice. Let X be the random variable representing the dollar amount won in a single roll of the three dice minus the dollar spent to play. Example: if the player rolls (6, 2, 6), then X = 1.
+
+Write R code to simulate the game of Chuck-A-Luck in the following steps.
+
+##### (a) 
+
+Write a function to simulate a roll of Chuck-A-Luck. The function should return the amount won minus the dollar spent (i.e., the random variable X from above.)
+
+```{r,warning=F,message=F}
+roll<-function(){
+  dices<-sample(1:6,3,replace=T)
+  return(sum(dices==6)-1)
+}
+```
+ 
+
+##### (b) 
+
+Run your function 1000 times, storing the values in a vector. Compute the sample mean and variance for this simulation. Plot a histogram of the X variable. Is the histogram symmetric about the mean? 
+
+```{r,warning=F,message=F}
+set.seed(02138)
+money<-numeric(1000)
+for(i in 1:1000){
+  money[i]<-roll()
+}
+
+cat("Simulated mean=", mean(money), '\n')
+cat("Simulated variance=", var(money), '\n')
+hist(money, col='orange')
+
+```
+
+> The histogram is definitely not symmetric about the mean.
+
+-----
+
+
+# (6)
+
+Introducing the Leverage Brothers (this problem is shorter than it looks).
+
+
+Randolph and William Leverage run their own private investment pool which has grown out of the proceeds of a trust established by their grandfather Horace Leverage. Horace Leverage was known as a high roller during the wild years of the 1920's and 1930's. He regaled his grandchildren with tales of borrowing money from a friend and investing in 1932 in Anaconda at $3, General Motors at $2, General Foods at $4 and so on. The result of these shrewd investments is that the current value of the grandfather Leverage's legacy is $ 50 million dollars. Now that grandfather is gone, William, 27 and Randolph, 32 are the sole, equal partners in Leverage Brothers or (L Bro). Both are married, both have one child (Randolph Jr. and William Jr. respectively). Both figure that their annual living expenses, what with private schools and vacations and so on, amount to $750 thousand each. Of course, this is after taxes. The difference between the two is that Randolph went to business school to learn the state-of-the-art investment theory, while William went to the school of hard (sic) knocks. 
+
+William wants to put the entire family fortune into baseball cards, while Randolph believes in the CAPM model and recommends holding the market portfolio. Randolph and William have one additional problem: their brother Charles. Charles is the black sheep of the family. Against grandfather's wishes, Charles shunned the investment business, went to medical school, then volunteered for the Peace Corps. Although Horace cut Charles out of his will, he has instigated a suit, claiming $10 million. Charles claims that he needs the money to finance an AIDs research facility in Zaire. L Bro's lawyers admit that the suit may have some merit, although it will take 5 years before any judgement. Just in case, however, they advise L Bro to make provisions to be prepared to pay the $10 million in 5 years' time. 
+
+Randolph finds that William rarely listens to his theoretical arguments about the wisdom of buying the market portfolio. Consequently, he decides to illustrate an investment policy by simulation. He wants to show the following: suppose L Bro invests 50 million in the stock market. After taxes and expenses, what will be the chance that, after 5 years they will have less than $40, $30, $20 or $10 million? He also wishes to see what the effect of a $10 million loss 5 years' hence will be upon their wealth 10 years out.
+
+Ignore city, state & property taxes and assume that L Bro has to pay 30% of each year' gains in taxes and a yearly asset management fee of .5% of assets under management. Also assume that L Bro's living expenses grow at 5% per year. Perform 1000 simulations. 
+
+Specifically, do the following assuming 100% invested in the market index. In file histrestsb are historical returns for each year (for stocks and bonds-ignore the bond returns). You can load this data into R as follows:
+
+```{r,warning=F,message=F}
+fname="http://people.fas.harvard.edu/~mparzen/stat107/histrets_sb.csv"
+mydata=read.csv(fname)
+```
+
+You will take this data and generate random returns for each year using a logspline density estimate and then use these random returns for your simulation. Clearly write up a report detailing the following: 
+
+
+##### (a) 
+
+Show the distribution of L Bro's wealth 5 years hence, without the effect of Charles' lawsuit. Is the distribution skewed? What is the median return? Is the standard deviation a useful measure of risk to the Leverage Brothers?  Show the distribution of wealth 10 years hence, assuming that Charles' lawsuit succeeds.
+
+```{r,warning=F,message=F}
+library(logspline)
+rets<-mydata$SP500
+ 
+# Function with returns, number of year, whether or not having a lawsuit as argumetns, and number of simulations
+sim.wealth<-function(rets, nyear, lawsuit, sim.n){
+  
+  # non-parametrics logspline density estimation
+  fit<-logspline(rets)
+  wealth<-numeric(sim.n) # initialize place-holder for absolute dollar
+  CAGR<-numeric(sim.n) # initialize place-holder for CAGR 
+  
+  for(i in 1:sim.n){
+    
+  wealth0<-50 # initialize 50 million at the beginning of each simulation
+  
+  living0<-750000*2/1000000 # living expenses for 2 families at the beginning
+
+  for(yr in 1:nyear){
+      
+      ret.sim<-rlogspline(1,fit)
+      
+      # + capital gain
+      # - a yearly asset management fee of .5% of assets under management, before tax 
+      fee<-0.005*wealth0*(1+ret.sim)
+      # -pay 30% of each year' gains in taxes  
+      tax<-0.3*wealth0*ret.sim
+      # - living expenses grow at 5% per year, the initial estimate is for the first year of investment
+      living <-living0*(1+0.05)^(yr-1)
+      
+       
+      # wealth at the end of the year
+      wealth0<-wealth0-fee-tax-living
+      
+      # assume Charles's lawsuit succeds at the end of 5th year
+      if(yr==5 & lawsuit==1){wealth0<-wealth0-10}
+       
+  }
+  # Store:  
+  wealth[i]<-wealth0
+  CAGR[i]<-(wealth[i]/50)^(1/nyear)-1 
+   
+  }
+  
+  return(data.frame(wealth, CAGR))
+}
+```
+
+
+```{r,warning=F,message=F}
+set.seed(02138)
+# Simualte 4 different possible realities and compare
+
+# wealth 5 years hence, without the effect of Charles' lawsuit
+wealth5yr.nolaw<-sim.wealth(rets, nyear=5, lawsuit=0, sim.n=100000)
+ 
+# wealth 10 years hence, assuming that Charles' lawsuit succeeds.
+wealth10yr.law<-sim.wealth(rets, nyear=10, lawsuit=1, sim.n=100000)
+
+# wealth 5 years hence, with the effect of Charles' lawsuit
+wealth5yr.law<-sim.wealth(rets, nyear=5, lawsuit=1, sim.n=100000)
+
+# wealth 10 years hence, assuming no Charles' lawsuit 
+wealth10yr.nolaw<-sim.wealth(rets, nyear=10, lawsuit=0, sim.n=100000)
+```
+
+**Look at the distribution of L Bro's wealth 5 years hence, without the effect of Charles' lawsuit.**
+
+```{r,warning=F,message=F}
+hist(wealth5yr.nolaw$wealth,prob=T, col="pink", main="5 years hence, without the effect of Charles' lawsuit",xlab="L Bro's wealth")
+x<-seq(10,70,0.01)
+fit<-logspline(wealth5yr.nolaw$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+
+plot(ecdf(wealth5yr.nolaw$wealth), main="Empirical CDF of Wealth", col="red")
+
+summary(wealth5yr.nolaw$wealth)
+sd(wealth5yr.nolaw$wealth)
+cat("what will be the chance that, after 5 years they will have less than $40 million? \n",mean(wealth5yr.nolaw$wealth<40),'\n')
+cat("what will be the chance that, after 5 years they will have less than $30 million? \n",mean(wealth5yr.nolaw$wealth<30),'\n')
+cat("what will be the chance that, after 5 years they will have less than $20 million? \n",mean(wealth5yr.nolaw$wealth<20),'\n')
+cat("what will be the chance that, after 5 years they will have less than $10 million? \n",mean(wealth5yr.nolaw$wealth<10),'\n')
+cat("what will be the chance that, after 5 years they will have less than $0 million? \n",mean(wealth5yr.nolaw$wealth<0),'\n')
+```
+
+> If without the effect of lawsuit, L Bro's wealth in 5 years: The mean wealth is $33 million with $5.6 million standard deviation. This indicates a significant reduction compared to the original wealth $50 million. The distribution of wealth is not skewed, it's pretty symmetric. There is a 89% chance they will have less than $40 million; a 30.4% chance they will have less than $30 million; a 0.56 % chance they will have less than $20 million; 0% chance they will have less than $10 million, but 0% chance they will lose all money. 
+
+**Look at the distribution of CAGR 5 years hence, without the effect of Charles' lawsuit.**
+
+```{r,warning=F,message=F}
+ 
+hist(wealth5yr.nolaw$CAGR,prob=T, col="pink", main="5 years hence ",xlab="CAGR")
+x<-seq(-0.7, 0.6, 0.01)
+fit<-logspline(wealth5yr.nolaw$CAGR)
+lines(x, dlogspline(x, fit), col="purple")
+
+plot(ecdf(wealth5yr.nolaw$CAGR), main="Empirical CDF of CAGR", col="red")
+ 
+summary(wealth5yr.nolaw$CAGR)
+sd(wealth5yr.nolaw$CAGR)
+cat("The probability of having negative CAGR= \n",mean(wealth5yr.nolaw$CAGR<0),'\n')
+
+```
+
+> If without the effect of lawsuit, CAGR in 5 years: The median return (CAGR) is -0.08093 with standard deviation 0.031. However, the distribution of CAGR is somewhat left-skewed, the standard deviation might not be a useful measure of risk. The standard deviation is informative if the distribution can be approximated by Normal, but in this case, standard deviation would imply smaller risk of losing money than what the real risk is. The probability of having negative CAGR or risk of losing money is 99.46% by the simulation. 
+
+
+**Look at the distribution of wealth 10 years hence, assuming that Charles' lawsuit succeeds.**
+
+```{r,warning=F,message=F}
+ 
+hist(wealth10yr.law$wealth,prob=T, col="pink", main="10 years hence, with the effect of Charles' lawsuit",xlab="L Bro's wealth")
+x<-seq(-10,45,0.01)
+fit<-logspline(wealth10yr.law$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+
+plot(ecdf(wealth10yr.law$wealth), main="Empirical CDF of Wealth", col="red")
+
+summary(wealth10yr.law$wealth)
+sd(wealth10yr.law$wealth)
+cat("what will be the chance that, after 10 years they will have less than $40 million? \n",mean(wealth10yr.law$wealth<40),'\n')
+cat("what will be the chance that, after 10 years they will have less than $30 million? \n",mean(wealth10yr.law$wealth<30),'\n')
+cat("what will be the chance that, after 10 years they will have less than $20 million? \n",mean(wealth10yr.law$wealth<20),'\n')
+cat("what will be the chance that, after 10 years they will have less than $10 million? \n",mean(wealth10yr.law$wealth<10),'\n')
+cat("what will be the chance that, after 10 years they will have less than $0 million? \n",mean(wealth10yr.law$wealth<0),'\n')
+```
+
+> If assuming that Charles' lawsuit succeeds, L Bro's wealth in 10 years: The mean wealth is $8.9 million with $5.1 million standard deviation. This is a huge reduction compared to the original wealth $50 million. Now, there is a 99.99% chance they will have less than $40 million; a 99.88% chance they will have less than $30 million; a 97.11% chance they will have less than $20 million; 61.72% chance they will have less than $10 million; now there is 2.17% chance they will lose all the money.  
+
+  
+
+
+##### (b) 
+
+Discuss the risk of loss. Is there a chance that L Bro will lose the family fortune? 
+
+```{r,warning=F,message=F}
+cat("What is the chance that L Bro will lose the entire family fortune, at the end of 5th year without lawsuit? \n",mean(wealth5yr.nolaw$wealth<0),'\n')
+cat("What is the chance that L Bro will lose the entire  family fortune, at the end of 5th year with lawsuit? \n",mean(wealth5yr.law$wealth<0),'\n')
+cat("What is the chance that L Bro will lose the entire  family fortune, at the end of 10th year without lawsuit? \n",mean(wealth10yr.nolaw$wealth<0),'\n')
+cat("What is the chance that L Bro will lose the entire  family fortune, at the end of 10th year with lawsuit? \n",mean(wealth10yr.law$wealth<0),'\n')
+```
+
+> Generally speaking, there is almost no chance L Bro will lose the entire family fortune. If there is no lawsuit, at the end of 5th year, there is basically no chance that L Bro will lose the entire family fortune; at the end of 10th year, there is a tiny chance (0.009%) that L Bro will lose the entire family fortune. However, with the reality of lawsuit, there is a 0.001% chance that L Bro will lose the entire family fortune; at the end of 10th year, there is 2.17% chance that they will lose the entire family fortune. 
+
+
+```{r,warning=F,message=F}
+cat("What is the chance that L Bro will lose part of family fortune, at the end of 5th year without lawsuit? \n",mean(wealth5yr.nolaw$wealth<50),'\n')
+cat("What is the chance that L Bro will lose part of  family fortune, at the end of 5th year with lawsuit? \n",mean(wealth5yr.law$wealth<50),'\n')
+cat("What is the chance that L Bro will lose part of  family fortune, at the end of 10th year without lawsuit? \n",mean(wealth10yr.nolaw$wealth<50),'\n')
+cat("What is the chance that L Bro will lose part of  family fortune, at the end of 10th year with lawsuit? \n",mean(wealth10yr.law$wealth<50),'\n')
+```
+
+> Generally speaking, it's almost certain L Bro will lose part of the family fortune. If there is no lawsuit, at the end of 5th year, there is 99.46% that L Bro will lose part of family fortune; at the end of 10th year, there is a 99.98% that L Bro will lose part of family fortune. However, with the reality of lawsuit, there is a 99.99% chance that L Bro will lose part of family fortune; at the end of 10th year, 100% sure that they will lose part of family fortune. 
+
+**To have better comparison, put simulated wealth and CAGR in 5 and 10 years, with and without lawsuit together**
+
+```{r,warning=F,message=F}
+hist(wealth5yr.nolaw$wealth,prob=T, col="pink", main="5 years hence, without the effect of Charles' lawsuit",xlab="L Bro's wealth", xlim=c(-15,70))
+x<-seq(-15,70,0.01)
+fit<-logspline(wealth5yr.nolaw$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+
+hist(wealth10yr.nolaw$wealth,prob=T, col="pink", main="10 years hence, without the effect of Charles' lawsuit",xlab="L Bro's wealth", xlim=c(-15,70))
+x<-seq(-15,70,0.01)
+fit<-logspline(wealth10yr.nolaw$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+
+hist(wealth5yr.law$wealth,prob=T, col="pink", main="5 years hence, with the effect of Charles' lawsuit",xlab="L Bro's wealth", xlim=c(-15,70))
+x<-seq(-15,70,0.01)
+fit<-logspline(wealth5yr.law$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+
+hist(wealth10yr.law$wealth,prob=T, col="pink", main="10 years hence, with the effect of Charles' lawsuit",xlab="L Bro's wealth", xlim=c(-15,70))
+x<-seq(-15,70,0.01)
+fit<-logspline(wealth10yr.law$wealth)
+lines(x, dlogspline(x, fit), col="purple")
+ 
+```
+
+> From the wealth perspective, we could clearly see the reduction effect of both stock and lawsuit.
+
+
+```{r}
+hist(wealth5yr.nolaw$CAGR, prob=T,col="orange", main="5 years hence, without the effect of Charles' lawsuit",xlab="CAGR", xlim=c(-0.7,0.7))
+x<-seq(-0.7,0.7,0.01)
+fit<-logspline(wealth5yr.nolaw$CAGR)
+lines(x, dlogspline(x, fit), col="red")
+
+hist(wealth10yr.nolaw$CAGR,prob=T, col="orange", main="10 years hence, without the effect of Charles' lawsuit",xlab="CAGR", xlim=c(-0.7,0.7))
+x<-seq(-0.7,0.7,0.01)
+fit<-logspline(wealth10yr.nolaw$CAGR)
+lines(x, dlogspline(x, fit), col="red")
+
+hist(wealth5yr.law$CAGR,prob=T, col="orange", main="5 years hence, with the effect of Charles' lawsuit",xlab="CAGR", xlim=c(-0.7,0.7))
+x<-seq(-0.7,0.7,0.01)
+fit<-logspline(wealth5yr.law$CAGR)
+lines(x, dlogspline(x, fit), col="red")
+
+hist(wealth10yr.law$CAGR,prob=T, col="orange", main="10 years hence, with the effect of Charles' lawsuit",xlab="CAGR", xlim=c(-0.7,0.7))
+x<-seq(-0.7,0.7,0.01)
+fit<-logspline(wealth10yr.law$CAGR)
+lines(x, dlogspline(x, fit), col="red")
+```
+
+> From the CAGR perspective, the rate of return are almost in the negative side, the reduction effects from stock and lawsuit tell the same story about how L Bro's wealth go to shrink in 5/10 years.
+
+
+
